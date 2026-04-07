@@ -365,6 +365,8 @@ def deduplicate(posts: list[dict]) -> list[dict]:
 
 # ── HTML generation ──
 
+PEPTIDE_TOPICS = {"peptide_education", "recovery", "biohacking", "anti_aging", "hormones", "longevity"}
+
 VIRALITY_BADGE = {
     "high":   ("background:#dcfce7;color:#16a34a", "🔥 High Virality"),
     "medium": ("background:#fef9c3;color:#ca8a04",  "📈 Medium"),
@@ -500,13 +502,18 @@ def _card_html(post: dict) -> str:
         "hook_text": post.get("hook_text", ""),
     }).replace("'", "&#39;").replace('"', "&quot;")
 
+    is_peptide = "true" if topic in PEPTIDE_TOPICS else "false"
+    posted_at_iso = post.get("posted_at", "")
+
     return f'''<div class="post-card"
   data-post-id="{post_id}"
   data-platform="{platform}"
   data-topic="{topic}"
   data-hook="{hook}"
   data-virality="{post.get('virality_tier','low')}"
-  data-score="{score}">
+  data-score="{score}"
+  data-posted-at="{posted_at_iso}"
+  data-peptide="{is_peptide}">
   <div class="card-thumb" onclick="window.open('{post_url}','_blank')">
     <img src="/images/{post_id}" alt="{account_name}" loading="lazy"
       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -744,8 +751,17 @@ body{{font-family:'Poppins',sans-serif;background:#eef0ec;color:#1a2420}}
     {hook_btns}
   </div>
   <div class="filter-sep"></div>
+  <span class="flbl">Posted:</span>
+  <div class="filter-group">
+    <button class="fbtn on" data-filter-type="timeRange" data-filter-val="all" onclick="fil(this)">All Time</button>
+    <button class="fbtn" data-filter-type="timeRange" data-filter-val="7" onclick="fil(this)">Last 7 Days</button>
+    <button class="fbtn" data-filter-type="timeRange" data-filter-val="30" onclick="fil(this)">Last 30 Days</button>
+    <button class="fbtn" data-filter-type="timeRange" data-filter-val="90" onclick="fil(this)">Last 3 Months</button>
+  </div>
+  <div class="filter-sep"></div>
   <div class="filter-group">
     <button class="fbtn" data-filter-type="virality" data-filter-val="high" onclick="fil(this)">🔥 High Virality Only</button>
+    <button class="fbtn" data-filter-type="peptide" data-filter-val="peptide" onclick="fil(this)" id="peptide-btn">💉 Peptide Related</button>
     <button class="fbtn" data-filter-type="saved" data-filter-val="saved" onclick="fil(this)" id="saved-btn">⭐ Saved (0)</button>
   </div>
 </div>
@@ -767,7 +783,7 @@ body{{font-family:'Poppins',sans-serif;background:#eef0ec;color:#1a2420}}
 
 <script>
 // ── Filter logic ──
-var activeFilters = {{platform:'all',topic:null,hook:null,virality:null,saved:false}};
+var activeFilters = {{platform:'all',topic:null,hook:null,virality:null,timeRange:'all',peptide:false,saved:false}};
 
 function fil(btn) {{
   var ftype = btn.dataset.filterType;
@@ -776,6 +792,9 @@ function fil(btn) {{
   if(ftype==='saved') {{
     activeFilters.saved = !activeFilters.saved;
     btn.classList.toggle('on', activeFilters.saved);
+  }} else if(ftype==='peptide') {{
+    activeFilters.peptide = !activeFilters.peptide;
+    btn.classList.toggle('on', activeFilters.peptide);
   }} else {{
     // Deactivate same-group buttons
     document.querySelectorAll('.fbtn[data-filter-type="'+ftype+'"]').forEach(function(b){{
@@ -798,6 +817,9 @@ function fil(btn) {{
 function applyFilters() {{
   var cards = document.querySelectorAll('.post-card');
   var visible = 0;
+  var now = Date.now();
+  var tr = activeFilters.timeRange;
+  var cutoff = tr && tr !== 'all' ? now - parseInt(tr) * 86400000 : null;
   cards.forEach(function(c) {{
     var show = true;
     var p = activeFilters.platform;
@@ -808,12 +830,17 @@ function applyFilters() {{
     if(t && c.dataset.topic !== t) show = false;
     if(h && c.dataset.hook !== h) show = false;
     if(v && c.dataset.virality !== v) show = false;
+    if(activeFilters.peptide && c.dataset.peptide !== 'true') show = false;
     if(activeFilters.saved && c.dataset.saved !== 'true') show = false;
+    if(cutoff && c.dataset.postedAt) {{
+      var postTime = new Date(c.dataset.postedAt).getTime();
+      if(isNaN(postTime) || postTime < cutoff) show = false;
+    }}
     c.classList.toggle('hidden', !show);
     if(show) visible++;
   }});
   // Expand all tiers when filtering
-  if(activeFilters.platform!=='all' || activeFilters.topic || activeFilters.hook || activeFilters.virality || activeFilters.saved) {{
+  if(activeFilters.platform!=='all' || activeFilters.topic || activeFilters.hook || activeFilters.virality || activeFilters.peptide || activeFilters.saved || (activeFilters.timeRange && activeFilters.timeRange!=='all')) {{
     document.querySelectorAll('.tier').forEach(function(s){{
       s.classList.remove('collapsed');
       var tog=s.querySelector('.tog');
