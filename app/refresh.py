@@ -718,7 +718,10 @@ body{{font-family:'Poppins',sans-serif;background:#eef0ec;color:#1a2420}}
 </head>
 <body>
 <div class="hdr">
-  <h1>LLMD Viral Post Intelligence</h1>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <h1>LLMD Viral Post Intelligence</h1>
+    <a href="/accounts" style="padding:7px 16px;background:rgba(212,168,67,.15);border:1px solid rgba(212,168,67,.4);border-radius:8px;color:#d4a843;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;margin-top:4px">⚙ Manage Accounts</a>
+  </div>
   <p class="sub">Weekly snapshot of the highest-performing organic posts in the peptide, longevity, and biohacking niche. Use filters to find hooks and formats worth adapting for LLMD.</p>
   <div class="stats">
     <div><div class="snum" id="stat-total">{total}</div><div class="slbl">Posts Tracked</div></div>
