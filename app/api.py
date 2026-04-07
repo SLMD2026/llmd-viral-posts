@@ -1,5 +1,6 @@
 """FastAPI server for LLMD Viral Post Intelligence Dashboard."""
 
+import base64
 import json
 import mimetypes
 import os
@@ -13,6 +14,28 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, Response
 
 app = FastAPI(title="LLMD Viral Post Intelligence")
+
+DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "")
+_UNPROTECTED = {"/health"}
+
+@app.middleware("http")
+async def basic_auth(request: Request, call_next):
+    if not DASHBOARD_PASSWORD or request.url.path in _UNPROTECTED:
+        return await call_next(request)
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(auth[6:]).decode()
+            _, pwd = decoded.split(":", 1)
+            if pwd == DASHBOARD_PASSWORD:
+                return await call_next(request)
+        except Exception:
+            pass
+    return Response(
+        content="Unauthorized",
+        status_code=401,
+        headers={"WWW-Authenticate": 'Basic realm="LLMD Dashboard"'},
+    )
 
 BASE_DIR = Path(__file__).parent.parent
 STATIC_DIR = BASE_DIR / "static"
@@ -462,6 +485,86 @@ function showMsg(text, ok) {{
   setTimeout(function(){{ el.style.display='none'; }}, 4000);
 }}
 </script>
+</body>
+</html>'''
+
+
+@app.get("/hub", response_class=HTMLResponse)
+def serve_hub():
+    return HTMLResponse(content=_hub_html(), status_code=200)
+
+
+def _hub_html() -> str:
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLMD Marketing Intelligence Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',sans-serif;background:#eef0ec;color:#1a2420;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:linear-gradient(135deg,#0f1a12,#1a2e1f);padding:52px 60px 44px;color:#fff;text-align:center}
+.hdr .logo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:#d4a843;margin-bottom:12px}
+.hdr h1{font-size:32px;font-weight:700;color:#fff;margin-bottom:8px}
+.hdr .sub{font-size:14px;color:rgba(255,255,255,.5);max-width:500px;margin:0 auto;line-height:1.7}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;padding:52px 60px;max-width:1100px;margin:0 auto;width:100%}
+.tool-card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;transition:transform .2s,box-shadow .2s;text-decoration:none;display:flex;flex-direction:column}
+.tool-card:hover{transform:translateY(-4px);box-shadow:0 8px 28px rgba(0,0,0,.13)}
+.card-accent{height:5px}
+.card-body{padding:28px 28px 24px;flex:1;display:flex;flex-direction:column;gap:10px}
+.card-icon{font-size:32px;margin-bottom:4px}
+.card-title{font-size:17px;font-weight:700;color:#1a2420}
+.card-desc{font-size:13px;color:#6b7280;line-height:1.6;flex:1}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{padding:3px 10px;border-radius:6px;font-size:10px;font-weight:600;background:#f0f2ee;color:#4b5563}
+.card-cta{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-top:1px solid #f3f4f6;font-size:12px;font-weight:600;color:#0f1a12}
+.cta-arrow{color:#d4a843;font-size:16px}
+.footer{text-align:center;padding:28px;font-size:11px;color:#9ca3af;margin-top:auto}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">Limitless Living MD</div>
+  <h1>Marketing Intelligence Hub</h1>
+  <p class="sub">Your weekly research tools for content strategy, competitive intelligence, and campaign inspiration.</p>
+</div>
+
+<div class="cards">
+  <a href="/" class="tool-card">
+    <div class="card-accent" style="background:linear-gradient(90deg,#d4a843,#f0c96a)"></div>
+    <div class="card-body">
+      <div class="card-icon">🔥</div>
+      <div class="card-title">Viral Post Intelligence</div>
+      <div class="card-desc">Weekly snapshot of the highest-performing organic posts from 14 top accounts in the peptide, longevity, and biohacking niche. Replicate viral content for LLMD with one click.</div>
+      <div class="card-tags">
+        <span class="tag">Instagram</span>
+        <span class="tag">TikTok</span>
+        <span class="tag">Organic Content</span>
+        <span class="tag">Updated Weekly</span>
+      </div>
+    </div>
+    <div class="card-cta">Open Dashboard <span class="cta-arrow">→</span></div>
+  </a>
+
+  <a href="https://web-production-d044b.up.railway.app" target="_blank" class="tool-card">
+    <div class="card-accent" style="background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+    <div class="card-body">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Swipe File — Paid Ads</div>
+      <div class="card-desc">Competitor paid ad creative across Instagram and Facebook. See what's running, what's been running longest (best signal for what converts), and adapt it for LLMD campaigns.</div>
+      <div class="card-tags">
+        <span class="tag">Facebook Ads</span>
+        <span class="tag">Instagram Ads</span>
+        <span class="tag">Competitor Intel</span>
+        <span class="tag">Updated Weekly</span>
+      </div>
+    </div>
+    <div class="card-cta">Open Swipe File <span class="cta-arrow">→</span></div>
+  </a>
+</div>
+
+<div class="footer">LLMD Marketing Intelligence · Internal use only</div>
 </body>
 </html>'''
 
