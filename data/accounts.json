@@ -1,0 +1,159 @@
+{
+  "last_updated": "2026-04-07",
+  "accounts": [
+    {
+      "name": "Andrew Huberman",
+      "instagram": "hubermanlab",
+      "tiktok": "hubermanlab",
+      "followers_ig": 8000000,
+      "followers_tt": 640000,
+      "tier": 1,
+      "category": "influencer",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Gary Brecka",
+      "instagram": "garybrecka",
+      "tiktok": "gary.brecka",
+      "followers_ig": 3000000,
+      "followers_tt": 300000,
+      "tier": 1,
+      "category": "influencer",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Bryan Johnson",
+      "instagram": "bryanjohnson_",
+      "tiktok": "_bryan_johnson_",
+      "followers_ig": 2000000,
+      "followers_tt": 548000,
+      "tier": 1,
+      "category": "influencer",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Mark Hyman MD",
+      "instagram": "drmarkhyman",
+      "tiktok": "drmarkhyman",
+      "followers_ig": 1800000,
+      "followers_tt": 412000,
+      "tier": 1,
+      "category": "physician",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Dave Asprey",
+      "instagram": "dave.asprey",
+      "tiktok": "daveaspreyofficial",
+      "followers_ig": 1390000,
+      "followers_tt": 263000,
+      "tier": 1,
+      "category": "influencer",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Gabrielle Lyon MD",
+      "instagram": "drgabriellelyon",
+      "tiktok": "drgabriellelyon",
+      "followers_ig": 900000,
+      "followers_tt": 200000,
+      "tier": 1,
+      "category": "physician",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "David Sinclair PhD",
+      "instagram": "davidsinclairphd",
+      "tiktok": null,
+      "followers_ig": 803000,
+      "followers_tt": 0,
+      "tier": 1,
+      "category": "researcher",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Ben Greenfield",
+      "instagram": "bengreenfieldfitness",
+      "tiktok": "bengreenfield",
+      "followers_ig": 456000,
+      "followers_tt": 120000,
+      "tier": 1,
+      "category": "influencer",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Rhonda Patrick PhD",
+      "instagram": "foundmyfitness",
+      "tiktok": "foundmyfitness",
+      "followers_ig": 600000,
+      "followers_tt": 74000,
+      "tier": 1,
+      "category": "researcher",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Dr. Tyna Moore",
+      "instagram": "drtynamoore",
+      "tiktok": "drtynamoore",
+      "followers_ig": 200000,
+      "followers_tt": 100000,
+      "tier": 2,
+      "category": "physician",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Nathalie Niddam",
+      "instagram": "nathalieniddam",
+      "tiktok": null,
+      "followers_ig": 82000,
+      "followers_tt": 0,
+      "tier": 2,
+      "category": "educator",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Peptide Lab",
+      "instagram": null,
+      "tiktok": "peptide_lab",
+      "followers_ig": 0,
+      "followers_tt": 50000,
+      "tier": 2,
+      "category": "educator",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Ways2Well",
+      "instagram": "ways2well",
+      "tiktok": "ways2well",
+      "followers_ig": 261000,
+      "followers_tt": 80000,
+      "tier": 3,
+      "category": "competitor",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    },
+    {
+      "name": "Joi Women's Wellness",
+      "instagram": "joiwomenswellness",
+      "tiktok": "joiwomenswellness",
+      "followers_ig": 177000,
+      "followers_tt": 40000,
+      "tier": 3,
+      "category": "competitor",
+      "added": "2026-04-07",
+      "added_by": "manual"
+    }
+  ]
+}
