@@ -102,7 +102,7 @@ def fetch_instagram_posts(accounts: list[dict]) -> list[dict]:
     account_map = {a["instagram"]: a for a in accounts if a.get("instagram")}
 
     items = apify_run_actor(IG_ACTOR, {
-        "usernames": usernames,
+        "username": usernames,
         "resultsLimit": 12,
     })
 
@@ -156,20 +156,17 @@ def fetch_tiktok_posts(accounts: list[dict]) -> list[dict]:
         return []
     print(f"  Fetching TikTok: {len(tt_accounts)} accounts...")
 
-    profile_urls = [
-        {"url": f"https://www.tiktok.com/@{a['tiktok']}"}
-        for a in tt_accounts
-    ]
     handle_to_account = {a["tiktok"].lower(): a for a in tt_accounts}
+    handles = [a["tiktok"] for a in tt_accounts]
 
     items = apify_run_actor(TT_ACTOR, {
-        "startUrls": profile_urls,
-        "maxItems": len(tt_accounts) * 12,
+        "profiles": handles,
+        "resultsPerPage": 12,
     })
 
     posts = []
     for item in items:
-        if not item:
+        if not item or item.get("error"):
             continue
         author = item.get("authorMeta") or item.get("author") or {}
         handle = (
@@ -299,61 +296,59 @@ def _extract_json(text: str) -> dict:
     return {}
 
 
-CLASSIFY_TEMPLATE = (PROMPTS_DIR / "classify.md").read_text() if (PROMPTS_DIR / "classify.md").exists() else ""
-
 HOOK_TYPES = {"curiosity_gap", "fear_based", "social_proof", "transformation", "educational", "controversy", "personal_story"}
 TOPICS = {"peptide_education", "weight_loss", "anti_aging", "biohacking", "functional_medicine", "recovery", "hormones", "spiritual_health", "longevity", "general_wellness"}
 FORMATS = {"talking_head", "text_overlay", "b_roll", "before_after", "testimonial", "lab_science", "lifestyle", "podcast_clip"}
+
+
+CLASSIFY_PROMPT = """Classify this social media post from the peptide/longevity/biohacking niche.
+
+Caption: {caption}
+Platform: {platform}
+
+Return ONLY a JSON object (no markdown, no explanation):
+{{"hook_type":"<one of: curiosity_gap|fear_based|social_proof|transformation|educational|controversy|personal_story>","topic":"<one of: peptide_education|weight_loss|anti_aging|biohacking|functional_medicine|recovery|hormones|spiritual_health|longevity|general_wellness>","format_guess":"<one of: talking_head|text_overlay|b_roll|before_after|testimonial|lab_science|lifestyle|podcast_clip>","hook_text":"<first 10 words of caption>"}}"""
+
+
+def _classify_one(post: dict) -> dict:
+    prompt = CLASSIFY_PROMPT.format(
+        caption=post.get("caption", "")[:300],
+        platform=post.get("platform", ""),
+    )
+    raw = _claude_request(prompt, max_tokens=150)
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-z]*\n?", "", raw)
+        raw = re.sub(r"\n?```\s*$", "", raw).strip()
+    result = json.loads(raw)
+    return {
+        "hook_type": result.get("hook_type", "educational") if result.get("hook_type") in HOOK_TYPES else "educational",
+        "topic": result.get("topic", "general_wellness") if result.get("topic") in TOPICS else "general_wellness",
+        "format_guess": result.get("format_guess", "talking_head") if result.get("format_guess") in FORMATS else "talking_head",
+        "hook_text": (result.get("hook_text") or post.get("caption", "")[:60]).strip(),
+    }
 
 
 def classify_posts(posts: list[dict]) -> list[dict]:
     if not ANTHROPIC_KEY:
         print("  Skipping classification (no ANTHROPIC_API_KEY)")
         for post in posts:
-            post.update({"hook_type": "educational", "topic": "general_wellness", "format_guess": "talking_head", "hook_text": ""})
+            post.update({"hook_type": "educational", "topic": "general_wellness", "format_guess": "talking_head", "hook_text": post.get("caption", "")[:60]})
         return posts
 
     print(f"  Classifying {len(posts)} posts with Claude Haiku...")
-    template = CLASSIFY_TEMPLATE
-
-    BATCH = 8
-    classified = []
-    for i in range(0, len(posts), BATCH):
-        batch = posts[i:i + BATCH]
-        batch_input = [
-            {"post_id": p["post_id"], "caption": p["caption"][:400], "platform": p["platform"]}
-            for p in batch
-        ]
-        prompt = template.replace(
-            "{{POST_JSON}}",
-            json.dumps(batch_input, indent=2)
-        )
-        prompt += "\n\nReturn a JSON ARRAY (not object) where each element corresponds to one post in order, with fields: post_id, hook_type, topic, format_guess, hook_text."
-
+    ok = 0
+    for i, post in enumerate(posts):
         try:
-            raw = _claude_request(prompt, max_tokens=600)
-            # Try to parse array
-            arr_match = re.search(r"\[.*\]", raw, re.DOTALL)
-            if arr_match:
-                results = json.loads(arr_match.group())
-                result_map = {r["post_id"]: r for r in results if isinstance(r, dict)}
-                for post in batch:
-                    r = result_map.get(post["post_id"], {})
-                    post["hook_type"] = r.get("hook_type", "educational") if r.get("hook_type") in HOOK_TYPES else "educational"
-                    post["topic"] = r.get("topic", "general_wellness") if r.get("topic") in TOPICS else "general_wellness"
-                    post["format_guess"] = r.get("format_guess", "talking_head") if r.get("format_guess") in FORMATS else "talking_head"
-                    post["hook_text"] = (r.get("hook_text") or post["caption"][:60]).strip()
-            else:
-                raise ValueError("No JSON array in response")
-        except Exception as e:
-            print(f"  Classification batch {i // BATCH + 1} failed: {e} — using defaults")
-            for post in batch:
-                post.update({"hook_type": "educational", "topic": "general_wellness", "format_guess": "talking_head", "hook_text": post["caption"][:60]})
-        classified.extend(batch)
-        if i + BATCH < len(posts):
-            time.sleep(1)
-
-    return classified
+            result = _classify_one(post)
+            post.update(result)
+            ok += 1
+        except Exception:
+            post.update({"hook_type": "educational", "topic": "general_wellness", "format_guess": "talking_head", "hook_text": post.get("caption", "")[:60]})
+        if (i + 1) % 20 == 0:
+            print(f"    {i + 1}/{len(posts)} classified ({ok} ok)...")
+    print(f"  Classification complete: {ok}/{len(posts)} succeeded")
+    return posts
 
 
 # ── Deduplication ──
